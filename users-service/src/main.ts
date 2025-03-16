@@ -12,7 +12,13 @@ async function bootstrap() {
   const port = configService.get<number>('server.port')!;
 
   app.useGlobalFilters(new MongoExceptionFilter());
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   await app.listen(port, () => {
     console.log('Users services is listening');

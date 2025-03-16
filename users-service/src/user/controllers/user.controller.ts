@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
@@ -17,6 +18,17 @@ import { User } from '../schemas/user.schemat';
 import { Response } from 'express';
 import { UpdateUserDTO } from '../dtos/updateUser.dto';
 import { ClientKafka } from '@nestjs/microservices';
+import { GetUsersQueryDTO } from '../dtos/getUsersQuery.dto';
+
+export interface FetchManyResult {
+  data: User[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 @Controller('users')
 export class UserController {
@@ -40,10 +52,15 @@ export class UserController {
   }
 
   @Get()
-  async fetchMany(@Res() response: Response): Promise<Response<User[]>> {
-    const users = await this.userService.findAll();
+  async fetchMany(
+    @Res() response: Response,
+    @Query() query: GetUsersQueryDTO,
+  ): Promise<Response<FetchManyResult>> {
+    const { page, limit } = query;
 
-    return response.status(HttpStatus.OK).json({ data: users });
+    const data = await this.userService.findAll({ page, limit });
+
+    return response.status(HttpStatus.OK).json({ ...data });
   }
 
   @Patch('/:id')
