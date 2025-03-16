@@ -4,30 +4,29 @@ import { User, UserSchema } from './schemas/user.schemat';
 import { UserService } from './services/user.service';
 import { UserController } from './controllers/user.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-
-const {
-  KAFKA_PORT,
-  KAFKA_GROUP_ID,
-  KAFKA_HOST,
-  KAFKA_CLIENT_ID,
-  KAFKA_SERVICE,
-} = process.env;
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
-        name: KAFKA_SERVICE!,
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: KAFKA_CLIENT_ID!,
-            brokers: [`${KAFKA_HOST}:${KAFKA_PORT}`],
+        name: 'NOTIFICATIONS_SERVICE',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.KAFKA,
+          options: {
+            client: {
+              clientId: config.get<string>('kafka.clientId'),
+              brokers: [
+                `${config.get<string>('kafka.host')}:${config.get<number>('kafka.port')}`,
+              ],
+            },
+            consumer: {
+              groupId: config.get<string>('kafka.groupId')!,
+            },
           },
-          consumer: {
-            groupId: KAFKA_GROUP_ID!,
-          },
-        },
+        }),
       },
     ]),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),

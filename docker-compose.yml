@@ -23,6 +23,7 @@ services:
       - "${USERS_PORT}:${PORT}"
     depends_on:
       - mongo
+      - kafka
     volumes:
       - ./data/users:/app/src
   notifications:
@@ -35,6 +36,8 @@ services:
       - "${NOTIFICATIONS_PORT}:${PORT}"
     volumes:
       - ./data/notifications:/app/src
+    depends_on:
+      - kafka
   kafka:
     image: apache/kafka-native
     ports:
@@ -62,4 +65,4 @@ services:
     environment:
       KAFKA_BROKERCONNECT: "kafka:9093"
     depends_on:
-      - "kafka"
+      - kafka

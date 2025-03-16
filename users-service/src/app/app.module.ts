@@ -1,26 +1,29 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from './controllers/app.controller';
+import { AppService } from './services/app.service';
 import { UserModule } from 'src/user/user.module';
-
-const {
-  MONGO_DATABASE,
-  MONGO_ROOT_USER,
-  MONGO_ROOT_PASSWORD,
-  MONGO_HOST,
-  MONGO_PORT,
-} = process.env;
+import configuration from 'src/config/configuration';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(`mongodb://${MONGO_HOST}:${MONGO_PORT}`, {
-      auth: {
-        username: MONGO_ROOT_USER,
-        password: MONGO_ROOT_PASSWORD,
-      },
-      dbName: MONGO_DATABASE,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: `mongodb://${config.get<string>('database.host')}:${config.get<string>('database.port')}`,
+        auth: {
+          username: config.get<string>('database.user'),
+          password: config.get<string>('database.password'),
+        },
+        dbName: config.get<string>('database.name'),
+      }),
     }),
     UserModule,
   ],
